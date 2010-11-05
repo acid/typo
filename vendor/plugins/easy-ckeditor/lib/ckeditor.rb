@@ -1,13 +1,13 @@
 # Ckeditor
 module Ckeditor
   begin
-    CONFIG = YAML.load_file("#{RAILS_ROOT}/config/ckeditor.yml")[RAILS_ENV]
+    CONFIG = YAML.load_file("#{::Rails.root.to_s}/config/ckeditor.yml")[::Rails.env]
   rescue => e
     CONFIG = nil
   end
   PLUGIN_NAME = 'easy-ckeditor'
-  PLUGIN_PATH = "#{RAILS_ROOT}/vendor/plugins/#{PLUGIN_NAME}"
-  PLUGIN_PUBLIC_PATH = "#{RAILS_ROOT}/public/files"
+  PLUGIN_PATH = "#{::Rails.root.to_s}/vendor/plugins/#{PLUGIN_NAME}"
+  PLUGIN_PUBLIC_PATH = "#{::Rails.root.to_s}/public/files"
   PLUGIN_PUBLIC_URI = "/files"
   PLUGIN_CONTROLLER_PATH = "#{PLUGIN_PATH}/app/controllers"
   PLUGIN_VIEWS_PATH = "#{PLUGIN_PATH}/app/views"
@@ -45,8 +45,6 @@ module Ckeditor
         inputs = "<textarea id='#{id}' style='width:#{width};height:#{height}' #{cols} #{rows} #{classy} name='#{object}[#{field}]'>#{h value}</textarea>\n"
       end
 
-      js_path = "#{controller.relative_url_root}/javascripts"
-      base_path = "#{js_path}/ckeditor/"
       return inputs <<
         javascript_tag("CKEDITOR.replace('#{object}[#{field}]', {
     filebrowserBrowseUrl : '#{PLUGIN_FILE_MANAGER_URI}',

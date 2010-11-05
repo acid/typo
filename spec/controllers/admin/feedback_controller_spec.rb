@@ -1,10 +1,10 @@
-require File.dirname(__FILE__) + '/../../spec_helper'
+require 'spec_helper'
 
 describe Admin::FeedbackController do
 
-  integrate_views
+  render_views
 
-  describe "destroy feedback with feedback from own article", :shared => true  do
+  shared_examples_for "destroy feedback with feedback from own article" do
     it 'should destroy feedback' do
       lambda do
         post 'destroy', :id => feedback_from_own_article.id
@@ -26,7 +26,7 @@ describe Admin::FeedbackController do
       lambda do
         Feedback.find(feedback_from_own_article.id)
       end.should_not raise_error(ActiveRecord::RecordNotFound)
-      response.should redirect_to(:controller => 'admin/feedback', :action => 'article', :id => feedback_from_own_article.article.id)
+      response.should render_template 'destroy'
     end
   end
 
@@ -111,21 +111,21 @@ describe Admin::FeedbackController do
         get :article, :id => contents(:article1).id
         should_success_with_article_view(response)
         assigns(:article).should == contents(:article1)
-        assigns(:comments).size.should == 2
+        assigns(:feedback).size.should == 2
       end
 
       it 'should see only spam feedback on one article' do
         get :article, :id => contents(:article1).id, :spam => 'y'
         should_success_with_article_view(response)
         assigns(:article).should == contents(:article1)
-        assigns(:comments).size.should == 1
+        assigns(:feedback).size.should == 1
       end
 
       it 'should see only ham feedback on one article' do
         get :article, :id => contents(:article1).id, :ham => 'y'
         should_success_with_article_view(response)
         assigns(:article).should == contents(:article1)
-        assigns(:comments).size.should == 1
+        assigns(:feedback).size.should == 1
       end
 
       it 'should redirect_to index if bad article id' do
@@ -150,10 +150,10 @@ describe Admin::FeedbackController do
         end
 
         it 'should not create comment' do
-          assert_no_difference 'Comment.count' do
+          lambda do
             get 'create', :article_id => contents(:article1).id, :comment => base_comment
             response.should redirect_to(:action => 'article', :id => contents(:article1).id)
-          end
+          end.should_not change(Comment, :count)
         end
 
       end
@@ -166,17 +166,17 @@ describe Admin::FeedbackController do
         end
 
         it 'should create comment' do
-          assert_difference 'Comment.count' do
+          lambda do
             post 'create', :article_id => contents(:article1).id, :comment => base_comment
             response.should redirect_to(:action => 'article', :id => contents(:article1).id)
-          end
+          end.should change(Comment, :count)
         end
 
         it 'should create comment mark as ham' do
-          assert_difference 'Comment.count(:conditions => {:state => "ham"})' do
+          lambda do
             post 'create', :article_id => contents(:article1).id, :comment => base_comment
             response.should redirect_to(:action => 'article', :id => contents(:article1).id)
-          end
+          end.should change { Comment.count(:conditions => {:state => "ham"}) }
         end
 
       end
@@ -198,8 +198,8 @@ describe Admin::FeedbackController do
     describe 'update action' do
 
       it 'should update comment if post request' do
-        post 'update', :id => feedback(:comment2).id, 
-          :comment => {:author => 'Bob Foo2', 
+        post 'update', :id => feedback(:comment2).id,
+          :comment => {:author => 'Bob Foo2',
                        :url => 'http://fakeurl.com',
                        :body => 'updated comment'}
         response.should redirect_to(:action => 'article', :id => contents(:article1).id)
@@ -208,8 +208,8 @@ describe Admin::FeedbackController do
       end
 
       it 'should not  update comment if get request' do
-        get 'update', :id => feedback(:comment2).id, 
-          :comment => {:author => 'Bob Foo2', 
+        get 'update', :id => feedback(:comment2).id,
+          :comment => {:author => 'Bob Foo2',
                        :url => 'http://fakeurl.com',
                        :body => 'updated comment'}
         response.should redirect_to(:action => 'edit', :id => feedback(:comment2).id)
@@ -231,7 +231,7 @@ describe Admin::FeedbackController do
     def feedback_from_own_article
       feedback(:comment_on_publisher_article)
     end
-    
+
     def feedback_from_not_own_article
       feedback(:comment2)
     end
@@ -271,8 +271,8 @@ describe Admin::FeedbackController do
     describe 'update action' do
 
       it 'should update comment if own article' do
-        post 'update', :id => feedback_from_own_article.id, 
-          :comment => {:author => 'Bob Foo2', 
+        post 'update', :id => feedback_from_own_article.id,
+          :comment => {:author => 'Bob Foo2',
                        :url => 'http://fakeurl.com',
                        :body => 'updated comment'}
         response.should redirect_to(:action => 'article', :id => feedback_from_own_article.article.id)
@@ -281,8 +281,8 @@ describe Admin::FeedbackController do
       end
 
       it 'should not update comment if not own article' do
-        post 'update', :id => feedback_from_not_own_article.id, 
-          :comment => {:author => 'Bob Foo2', 
+        post 'update', :id => feedback_from_not_own_article.id,
+          :comment => {:author => 'Bob Foo2',
                        :url => 'http://fakeurl.com',
                        :body => 'updated comment'}
         response.should redirect_to(:action => 'index')

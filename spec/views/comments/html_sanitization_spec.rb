@@ -1,17 +1,16 @@
-require File.dirname(__FILE__) + '/../../spec_helper'
+require 'spec_helper'
 
-describe "CommentSanitization", :shared => true do
+shared_examples_for "CommentSanitization" do
   before do
     @article = mock_model(Article, :created_at => Time.now, :published_at => Time.now)
     Article.stub!(:find).and_return(@article)
-    @blog = mock_model(Blog, :use_gravatar => false)
-    @blog.stub!(:lang).and_return('en_US')
-    @controller.template.stub!(:this_blog).and_return(@blog)
+    this_blog.use_gravatar = false
+    this_blog.lang = 'en_US'
 
     prepare_comment
 
     @comment.stub!(:id).and_return(1)
-    assigns[:comment] = @comment
+    assign(:comment, @comment)
   end
 
   def prepare_comment
@@ -24,23 +23,23 @@ describe "CommentSanitization", :shared => true do
 
   ['', 'markdown', 'textile', 'smartypants', 'markdown smartypants'].each do |value|
     it "Should sanitize content rendered with the #{value} textfilter" do
-      @blog.stub!(:comment_text_filter).and_return(value)
+      this_blog.comment_text_filter = value
 
-      render 'comments/show'
-      response.should have_tag('.content')
-      response.should have_tag('.author')
+      render :file => 'comments/show'
+      rendered.should have_selector('.content')
+      rendered.should have_selector('.author')
 
-      response.should_not have_tag('.content script')
-      response.should_not have_tag(".content a:not([rel=nofollow])")
+      rendered.should_not have_selector('.content script')
+      rendered.should_not have_selector(".content a:not([rel=nofollow])")
       # No links with javascript
-      response.should_not have_tag(".content a[onclick]")
-      response.should_not have_tag(".content a[href^=javascript:]")
+      rendered.should_not have_selector(".content a[onclick]")
+      rendered.should_not have_selector(".content a[href^=\"javascript:\"]")
 
-      response.should_not have_tag('.author script')
-      response.should_not have_tag(".author a:not([rel=nofollow])")
+      rendered.should_not have_selector('.author script')
+      rendered.should_not have_selector(".author a:not([rel=nofollow])")
       # No links with javascript
-      response.should_not have_tag(".author a[onclick]")
-      response.should_not have_tag(".author a[href^=javascript:]")
+      rendered.should_not have_selector(".author a[onclick]")
+      rendered.should_not have_selector(".author a[href^=\"javascript:\"]")
     end
   end
 end
