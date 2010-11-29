@@ -8,11 +8,12 @@ unless File.exists?(dbfile)
 else
   conf = YAML.load(File.read(dbfile))
   adapter = conf[env]['adapter']
+  raise "You need define an adapter in your database.yml" if adapter == '' || adapter.nil?
   case adapter
   when 'sqlite3'
     gem 'sqlite3-ruby'
   when 'postgresql'
-    gem 'postgres'
+    gem 'pg'
   when 'mysql'
     gem 'mysql'
   else
@@ -50,6 +51,6 @@ end
 
 group :adapters do
   gem 'sqlite3-ruby'
-  gem 'postgres'
+  gem 'pg'
   gem 'mysql'
 end
